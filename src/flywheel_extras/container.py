@@ -7,9 +7,7 @@ from .collector import FnCollector
 
 
 @dataclass
-class Capability:
-    # namespace: str = 'default'
-
+class FnCollectorContainer:
     def __getattribute__(self, name: str):
         if isinstance(attr := object.__getattribute__(self, name), FnCollector):
             @wraps(attr.base)

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from flywheel import SimpleOverload, TypeOverload, CollectContext, InstanceOf, InstanceContext
 
-from flywheel_extras import Capability, FnCollector, OptionalInstanceOf
+from flywheel_extras import FnCollector, FnCollectorContainer, OptionalInstanceOf
 
 
-class DemoCapability(Capability):
+class DemoCapability(FnCollectorContainer):
     attr_a = InstanceOf(int)
     attr_b = OptionalInstanceOf(str, 'string')
 
