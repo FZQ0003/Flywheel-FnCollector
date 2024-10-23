@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import itertools
 from collections.abc import Callable
+from copy import deepcopy
 from dataclasses import dataclass, field
 from typing import Generic, Any
 
@@ -58,7 +59,8 @@ class FnCollector(Generic[P, R]):
                 __context: CollectContext | None = None,
                 **overload_settings):
         if not (endpoint := self.endpoints.get(__namespace, None)):
-            self.endpoints[__namespace] = endpoint = FnCollectEndpoint(self._endpoint_target)
+            # Deepcopy the generator for different namespaces
+            self.endpoints[__namespace] = endpoint = FnCollectEndpoint(deepcopy(self._endpoint_target))
         if not __context:
             __context = COLLECTING_CONTEXT_VAR.get()
 
