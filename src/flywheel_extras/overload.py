@@ -15,3 +15,18 @@ class MappingOverload(SimpleOverload):
 
     def harvest(self, scope: dict, call_value: Any) -> dict[Callable, None]:
         return super().harvest(scope, self.map_func(call_value))
+
+
+class PredicateOverload(SimpleOverload):
+    predicate: Callable[[Any, Any], bool]  # (collect_value, call_value) -> bool
+
+    def __init__(self, name: str, predicate: Callable[[Any, Any], bool]):
+        super().__init__(name)
+        self.predicate = predicate
+
+    def harvest(self, scope: dict, call_value: Any) -> dict[Callable, None]:
+        result = {}
+        for collect_value, funcs in scope.items():
+            if self.predicate(collect_value, call_value):
+                result.update(funcs)
+        return result
