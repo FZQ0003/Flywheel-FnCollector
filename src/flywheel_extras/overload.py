@@ -6,10 +6,17 @@ from typing import Any
 from flywheel.overloads import SimpleOverload
 
 
+def _dummy_map_func(call_value):
+    return call_value
+
+def _dummy_predicate(collect_value, call_value):
+    return collect_value == call_value
+
+
 class MappingOverload(SimpleOverload):
     map_func: Callable[[Any], Any]  # (call_value) -> collect_value
 
-    def __init__(self, name: str, mapping: Callable[[Any], Any] | Mapping[Any, Any]):
+    def __init__(self, name: str, mapping: Callable[[Any], Any] | Mapping[Any, Any] = _dummy_map_func):
         super().__init__(name)
         self.map_func = mapping if isinstance(mapping, Callable) else lambda _: mapping.get(_, None)
 
@@ -20,7 +27,7 @@ class MappingOverload(SimpleOverload):
 class PredicateOverload(SimpleOverload):
     predicate: Callable[[Any, Any], bool]  # (collect_value, call_value) -> bool
 
-    def __init__(self, name: str, predicate: Callable[[Any, Any], bool]):
+    def __init__(self, name: str, predicate: Callable[[Any, Any], bool] = _dummy_predicate):
         super().__init__(name)
         self.predicate = predicate
 
