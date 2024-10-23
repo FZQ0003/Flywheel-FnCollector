@@ -15,7 +15,9 @@ class DemoCapability(FnCollectorContainer):
     @FnCollector.set(SimpleOverload('name'), TypeOverload('event'))
     def func_b(self, name: str, event: object | None = None) -> str: ...
 
-    @classmethod  # Note: property is not supported
+    # For properties, use property.fget to get FnCollector.
+    # However, they will not work because of no args provided.
+    @classmethod
     @FnCollector.set(SimpleOverload('name'))
     def func_c(cls, name: str) -> str: ...
 

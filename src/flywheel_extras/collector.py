@@ -28,6 +28,7 @@ class FnCollector(Generic[P, R]):
     @classmethod
     def set(cls, *overloads: FnOverload, as_default: bool = False):
         def wrapper(func: Callable[P, R]) -> 'FnCollector[P, R]':
+            # func = getattr(func, '__func__', func)
             return cls(
                 base=func,
                 overloads={
@@ -97,6 +98,8 @@ class FnCollector(Generic[P, R]):
                     ...
         # I think I should write a doc here
         for results in itertools.product(*(_[-2:] for _ in harvest_temp)):
+            if not results:
+                continue
             # The first result is perfect
             for result in set.intersection(*results):
                 # From Selection._wraps()
