@@ -16,12 +16,16 @@ from .utils import get_var_names, bind_args
 @dataclass
 class FnCollector(Generic[P, R]):
     base: Callable[P, R]
-    overloads: dict[str, tuple[FnOverload, SimpleOverload]]
+    overloads: dict[str, tuple[FnOverload, SimpleOverload]] = field(default_factory=dict)
     base_as_default: bool = False
     endpoints: dict[Any, FnCollectEndpoint[..., Callable[P, R]]] = field(init=False)
 
     def __post_init__(self):
         self.endpoints = {None: FnCollectEndpoint(self._endpoint_target)}
+        if not self.overloads:
+            # Add empty SimpleOverloads if no FnOverloads found
+            empty_overload = SimpleOverload(f'empty@{id(self.base)}')
+            self.overloads = {'!': (empty_overload, empty_overload)}
 
     @classmethod
     def set(cls, *overloads: FnOverload, as_default: bool = False):
@@ -39,11 +43,11 @@ class FnCollector(Generic[P, R]):
 
         return wrapper
 
-    def _endpoint_target(self, *args, **overload_settings):
+    def _endpoint_target(self, *_, **overload_settings):
         # Collect
-        for name, overload in self.overloads.items():
+        for name, fn_overload in self.overloads.items():
             value = overload_settings.get(name, None)
-            yield overload[value is None].hold(value)
+            yield fn_overload[value is None].hold(value)
 
         # For type checking
         def shape(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -80,7 +84,8 @@ class FnCollector(Generic[P, R]):
         args_dict = bind_args(self.base, *args, **kwargs)
         # Harvest
         harvest_temp: list[tuple[str, FnOverload, SimpleOverload, Any, set[Callable], set[Callable]]]
-        harvest_temp = [(_n, _o[0], _o[1], args_dict[_n], set(), set()) for _n, _o in self.overloads.items()]
+        harvest_temp = [(_n, _o[0], _o[1], args_dict.get(_n, None), set(), set())
+                        for _n, _o in self.overloads.items()]
         endpoint = self.endpoints.get(__namespace, self.endpoints[None])
         for selection in endpoint.select(False):
             for h_n, h_o, h_o_fb, h_v, r, r_fb in harvest_temp:
