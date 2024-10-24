@@ -6,10 +6,12 @@
 
 # Project Structure
 
+> 注：标记为`分发包未提供`的文件需要自行从仓库获取，且相关链接失效。
+
 ```text
 Flywheel-FnCollector
-├── demo_*.py ················· 示例代码
-├── pdm.lock ·················· PDM 锁定文件
+├── demo_*.py ················· 示例代码 (分发包未提供)
+├── pdm.lock ·················· PDM 锁定文件 (分发包未提供)
 ├── pyproject.toml ············ 项目依赖 (PDM)
 ├── README.md ················· 项目介绍
 └── src ······················· 项目源码
@@ -114,7 +116,7 @@ def impl_p(self: Action) -> str: ...
 '1111'
 ```
 
-默认上下文收集方式与`local_collect`相同。  
+默认上下文收集方式与`local_collect`相同。
 根据[文档说明](https://github.com/GreyElaina/RvFlywheel/blob/main/README.zh.md#scoped_collect)，
 项目将避免使用`scoped_collect`。
 
