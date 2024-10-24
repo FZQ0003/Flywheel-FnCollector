@@ -15,11 +15,22 @@ class DemoCapability(FnCollectorContainer):
     @FnCollector.set(SimpleOverload('name'), TypeOverload('event'))
     def func_b(self, name: str, event: object | None = None) -> str: ...
 
-    # For properties, use property.fget to get FnCollector.
-    # However, they will not work because of no args provided.
+    # Class methods are not directly supported.
+    # Inherit FnCollectorContainer to avoid this.
     @classmethod
     @FnCollector.set(SimpleOverload('name'))
     def func_c(cls, name: str) -> str: ...
+
+    # For properties, use property.fget to get FnCollector.
+    # It is not recommended to set no overloads.
+    @property
+    @FnCollector.set()
+    def func_p(self) -> str: ...
+
+    # Fully supported
+    @staticmethod
+    @FnCollector.set(SimpleOverload('name'))
+    def func_s(name: str) -> str: ...
 
 
 demo = DemoCapability()
@@ -85,3 +96,20 @@ def impl_b_3(self: DemoCapability, name: str, event: object | None = None) -> st
 
 print(demo.func_b('him', [42]))
 print(demo.func_b('him'))
+
+
+@DemoCapability.func_p.fget.collect()  # type: ignore
+def impl_p(self: DemoCapability) -> str:
+    return f'impl_p: Property func_p called by {self}'
+
+
+print(demo.func_p)
+
+
+@DemoCapability.func_s.collect(name='him')
+def impl_s(name: str) -> str:
+    return f'impl_s: Static method called by {name}'
+
+
+print(DemoCapability.func_s('him'))
+print(demo.func_s('him'))

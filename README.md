@@ -57,7 +57,8 @@ def greet_grey(name: str) -> str:
 'Ordinary, Hizuki.'
 ```
 
-可以输入多个`FnOverload`，调用时会采取一些数学手段匹配最佳实现。
+可以输入多个`FnOverload`，调用时会采取一些数学手段匹配最佳实现；
+也可以不输入任何`FnOverload`，此时会自动创建空的`SimpleOverload`。
 
 ### FnCollectorContainer
 
@@ -77,7 +78,7 @@ class Action(FnCollectorContainer):
     @FnCollector.set(SimpleOverload('name'))
     def func_c(cls, name: str) -> str: ...
 
-    @property  # 可以定义，但不会起作用的
+    @property  # 可以定义，但没什么用，也不推荐这么做
     @FnCollector.set(as_default=True)
     def func_p(self) -> str:
         return ''
