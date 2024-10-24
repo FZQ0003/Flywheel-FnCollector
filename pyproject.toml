@@ -1,16 +1,26 @@
 [project]
-name = "Flywheel-FnCollector"
+name = "flywheel-fncollector"
 version = "0.1.0"
 description = "Add a FnCollector for Ryanvk Flywheel"
 authors = [
     { name = "F_Qilin", email = "fzq0003@gmail.com" },
 ]
 dependencies = [
-    "elaina-flywheel>=0.6.0",
+    "elaina-flywheel>=0.6.0,<0.7.0",
 ]
 requires-python = ">=3.9"
 readme = "README.md"
 license = { text = "MIT" }
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Development Status :: 1 - Planning",
+]
+
+[project.urls]
+homepage = "https://github.com/FZQ0003/Flywheel-FnCollector"
+issues = "https://github.com/FZQ0003/Flywheel-FnCollector/issues"
 
 [build-system]
 requires = ["pdm-backend"]
@@ -18,3 +28,6 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.build]
+includes = ["src/flywheel_extras/"]
