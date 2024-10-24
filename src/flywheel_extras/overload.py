@@ -9,6 +9,7 @@ from flywheel.overloads import SimpleOverload
 def _dummy_map_func(call_value):
     return call_value
 
+
 def _dummy_predicate(collect_value, call_value):
     return collect_value == call_value
 
