@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 import itertools
 from collections.abc import Callable
 from copy import deepcopy
@@ -11,9 +10,7 @@ from flywheel import CollectContext, FnCollectEndpoint, FnImplementEntity, FnOve
 from flywheel.globals import CALLER_TOKENS, COLLECTING_CONTEXT_VAR
 from flywheel.typing import P, R
 
-
-def _get_var_names(func: Callable) -> tuple[str, ...]:
-    return tuple(inspect.signature(func).parameters.keys())
+from .utils import get_var_names, bind_args
 
 
 @dataclass
@@ -35,7 +32,7 @@ class FnCollector(Generic[P, R]):
                 overloads={
                     # Another SimpleOverload as fallback FnOverload (optional)
                     _.name: (_, SimpleOverload('fallback@' + _.name))
-                    for _ in overloads if _.name in _get_var_names(func)
+                    for _ in overloads if _.name in get_var_names(func)
                 },
                 base_as_default=as_default
             )
@@ -68,11 +65,11 @@ class FnCollector(Generic[P, R]):
             # Check function signature
             if (
                     not isinstance(func, FnImplementEntity)
-                    and _get_var_names(func) != _get_var_names(self.base)
+                    and get_var_names(func) != get_var_names(self.base)
             ):
                 raise TypeError(
                     'Signature mismatch: '
-                    f'func{_get_var_names(func)} != base{_get_var_names(self.base)}'
+                    f'func{get_var_names(func)} != base{get_var_names(self.base)}'
                 )
             return __context.collect(endpoint(**overload_settings)(func))
 
@@ -80,9 +77,7 @@ class FnCollector(Generic[P, R]):
 
     def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
         # Check input signature
-        bound = inspect.signature(self.base).bind(*args, **kwargs)
-        bound.apply_defaults()
-        args_dict = bound.arguments
+        args_dict = bind_args(self.base, *args, **kwargs)
         # Harvest
         harvest_temp: list[tuple[str, FnOverload, SimpleOverload, Any, set[Callable], set[Callable]]]
         harvest_temp = [(_n, _o[0], _o[1], args_dict[_n], set(), set()) for _n, _o in self.overloads.items()]
