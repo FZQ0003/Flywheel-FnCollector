@@ -14,6 +14,7 @@ jobs:
   pypi-publish:
     name: Upload tag / release to PyPI
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: read
       id-token: write
