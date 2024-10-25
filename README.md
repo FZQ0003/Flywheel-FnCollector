@@ -17,10 +17,11 @@ Flywheel-FnCollector
 └── src ······················· 项目源码
     └── flywheel_extras ······· 模块名
         ├── __init__.py ······· 模块入口
-        ├── collector.py ······ FnCollector 定义
-        ├── container.py ······ FnCollectorContainer 定义
+        ├── collector.py ······ FnCollector 相关定义
+        ├── deprecated.py ····· 已弃用类/函数定义
         ├── instance.py ······· InstanceOf 扩展
-        └── overload.py ······· FnOverload 扩展
+        ├── overload.py ······· FnOverload 扩展
+        └── utils.py ·········· 工具函数定义
 ```
 
 ## Usage
@@ -60,9 +61,7 @@ def greet_grey(name: str) -> str:
 可以输入多个`FnOverload`，调用时会采取一些数学手段匹配最佳实现；
 也可以不输入任何`FnOverload`，此时会自动创建空的`SimpleOverload`。
 
-### FnCollectorContainer
-
-使用`FnCollectorContainer`可以很方便地处理类中`FnCollector`，调用时会自动添加self参数。
+`FnCollector`支持在类中定义，调用时会自动添加self参数。
 
 ```python
 from flywheel import SimpleOverload
@@ -70,7 +69,7 @@ from flywheel import SimpleOverload
 from flywheel_extras import FnCollector, FnCollectorContainer
 
 
-class Action(FnCollectorContainer):
+class Action:
     @FnCollector.set(SimpleOverload('name'))
     def func_n(self, name: str) -> str: ...
 
