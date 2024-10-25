@@ -4,7 +4,7 @@
 
 此外添加了一些对后续工作可能有用的东西。
 
-# Project Structure
+## Project Structure
 
 > 注：标记为`分发包未提供`的文件需要自行从仓库获取，且相关链接失效。
 
@@ -66,7 +66,7 @@ def greet_grey(name: str) -> str:
 ```python
 from flywheel import SimpleOverload
 
-from flywheel_extras import FnCollector, FnCollectorContainer
+from flywheel_extras import FnCollector
 
 
 class Action:

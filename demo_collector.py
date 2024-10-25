@@ -15,8 +15,7 @@ class DemoCapability:
     @FnCollector.set(SimpleOverload('name'), TypeOverload('event'))
     def func_b(self, name: str, event: object | None = None) -> str: ...
 
-    # Class methods are not directly supported.
-    # Inherit FnCollectorContainer to avoid this.
+    # OK
     @classmethod
     @FnCollector.set(SimpleOverload('name'))
     def func_c(cls, name: str) -> str: ...
@@ -27,7 +26,7 @@ class DemoCapability:
     @FnCollector.set()
     def func_p(self) -> str: ...  # noqa
 
-    # Fully supported
+    # OK
     @staticmethod
     @FnCollector.set(SimpleOverload('name'))
     def func_s(name: str) -> str: ...
