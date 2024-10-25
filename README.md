@@ -97,6 +97,13 @@ def impl_n(self: Action, name: str) -> str: ...
 def impl_p(self: Action) -> str: ...
 ```
 
+> [!WARNING]
+>
+> `FnCollector`改变了存在重复实现时调用顺序：在同一个`CollectContext`下，优先选择**最后定义**的实现；
+> 不同`CollectContext`下逻辑与原版一致。
+>
+> 这么做是为了方便后续在其他项目中实现外挂重载功能。
+
 ### Namespace & Context
 
 `FnCollector`采用动态定义`FnCollectEndpoint`的方式，这意味着你可以放心在全局上下文中使用相同命名的`FnOverload`。
