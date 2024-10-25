@@ -11,7 +11,7 @@ from flywheel.globals import CALLER_TOKENS, COLLECTING_CONTEXT_VAR
 from flywheel.typing import P, R, T
 from typing_extensions import Concatenate, Self
 
-from .utils import get_var_names, bind_args
+from .utils import get_var_names, bind_args, dict_intersection
 
 
 @dataclass
@@ -84,19 +84,22 @@ class FnCollector(Generic[P, R]):
         # Check input signature
         args_dict = bind_args(self.base, *args, **kwargs)
         # Harvest
-        harvest_temp: list[tuple[str, FnOverload, SimpleOverload, Any, set[Callable], set[Callable]]]
-        harvest_temp = [(_n, _o[0], _o[1], args_dict.get(_n, None), set(), set())
+        harvest_temp: list[
+            tuple[str, FnOverload, SimpleOverload, Any, dict[Callable, None], dict[Callable, None]]
+        ]
+        harvest_temp = [(_n, _o[0], _o[1], args_dict.get(_n, None), {}, {})
                         for _n, _o in self.overloads.items()]
         endpoint = self.endpoints.get(__namespace, self.endpoints[None])
         for selection in endpoint.select(False):
             for h_n, h_o, h_o_fb, h_v, r, r_fb in harvest_temp:
                 try:
-                    r.update(selection.harvest(h_o, h_v))
+                    # Reverse to choose the last function in the same scope
+                    r.update(reversed(selection.harvest(h_o, h_v).items()))
                 except NotImplementedError:
                     ...
                 try:
                     # Fallback
-                    r_fb.update(selection.harvest(h_o_fb, None))
+                    r_fb.update(reversed(selection.harvest(h_o_fb, None).items()))
                 except NotImplementedError:
                     ...
         # I think I should write a doc here
@@ -104,7 +107,7 @@ class FnCollector(Generic[P, R]):
             if not results:
                 continue
             # The first result is perfect
-            for result in set.intersection(*results):
+            for result in dict_intersection(*results):
                 # From Selection._wraps()
                 tokens = CALLER_TOKENS.get()
                 current_index = tokens.get(endpoint, -1)

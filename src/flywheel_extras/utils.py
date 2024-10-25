@@ -15,3 +15,7 @@ def bind_args(func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> dict[s
     bound = inspect.signature(func).bind(*args, **kwargs)
     bound.apply_defaults()
     return bound.arguments
+
+
+def dict_intersection(*dicts: dict[Any, None]) -> dict[Any, None]:
+    return {_k: _v for _d in dicts for _k, _v in _d.items()}

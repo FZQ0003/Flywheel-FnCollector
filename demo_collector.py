@@ -106,8 +106,13 @@ print(demo.func_p)
 
 
 @DemoCapability.func_s.collect(name='him')
-def impl_s(name: str) -> str:
-    return f'impl_s: Static method called by {name}'
+def impl_s_1(name: str) -> str:
+    return f'impl_s_1: Static method called by {name}'
+
+
+@DemoCapability.func_s.collect(name='him')
+def impl_s_2(name: str) -> str:
+    return f'impl_s_2 (expected): Static method called by {name}'
 
 
 print(DemoCapability.func_s('him'))
