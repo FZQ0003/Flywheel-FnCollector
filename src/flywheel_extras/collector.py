@@ -4,11 +4,12 @@ import itertools
 from collections.abc import Callable
 from copy import deepcopy
 from dataclasses import dataclass, field
-from typing import Generic, Any
+from typing import Generic, Any, overload
 
 from flywheel import CollectContext, FnCollectEndpoint, FnImplementEntity, FnOverload, SimpleOverload
 from flywheel.globals import CALLER_TOKENS, COLLECTING_CONTEXT_VAR
-from flywheel.typing import P, R
+from flywheel.typing import P, R, T
+from typing_extensions import Concatenate, Self
 
 from .utils import get_var_names, bind_args
 
@@ -118,3 +119,31 @@ class FnCollector(Generic[P, R]):
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
         return self.call(None, *args, **kwargs)
+
+    @overload
+    def __get__(self, instance: 'FnCollectorInClass | None', owner: type) -> Self:
+        ...
+
+    @overload
+    def __get__(self, instance: T, owner: type) -> 'FnCollectorInClass[T, P, R]':
+        ...
+
+    def __get__(self, instance, owner):
+        if instance is None or isinstance(instance, FnCollectorInClass):
+            return self
+        return FnCollectorInClass(self, instance)  # type: ignore
+
+
+@dataclass
+class FnCollectorInClass(Generic[T, P, R]):
+    collector: FnCollector[Concatenate[T, P], R]
+    instance: T
+
+    def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self.collector.call(__namespace, self.instance, *args, **kwargs)
+
+    def __getattr__(self, item: str):
+        return getattr(self.collector, item)
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+        return self.collector(self.instance, *args, **kwargs)

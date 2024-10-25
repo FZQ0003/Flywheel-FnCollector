@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from flywheel import SimpleOverload, TypeOverload, CollectContext, InstanceOf, InstanceContext
 
-from flywheel_extras import FnCollector, FnCollectorContainer, OptionalInstanceOf
+from flywheel_extras import FnCollector, OptionalInstanceOf
 
 
-class DemoCapability(FnCollectorContainer):
+class DemoCapability:
     attr_a = InstanceOf(int)
     attr_b = OptionalInstanceOf(str, 'string')
 
@@ -25,7 +25,7 @@ class DemoCapability(FnCollectorContainer):
     # It is not recommended to set no overloads.
     @property
     @FnCollector.set()
-    def func_p(self) -> str: ...
+    def func_p(self) -> str: ...  # noqa
 
     # Fully supported
     @staticmethod
