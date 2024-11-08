@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Callable
+from collections.abc import Callable, Generator
 from copy import deepcopy
 from dataclasses import dataclass, field
+from functools import wraps
 from typing import Generic, Any, overload
 
 from flywheel import CollectContext, FnCollectEndpoint, FnImplementEntity, FnOverload, SimpleOverload
@@ -11,7 +12,23 @@ from flywheel.globals import CALLER_TOKENS, COLLECTING_CONTEXT_VAR
 from flywheel.typing import P, R, T
 from typing_extensions import Concatenate, Self
 
-from .utils import get_var_names, bind_args, dict_intersection
+from .collection import FnCollection
+from .utils import get_var_names, bind_args, dict_intersection, get_method_class, get_common_ancestor
+
+
+def _selection_wraps(func: Callable[P, R], endpoint: FnCollectEndpoint) -> Callable[P, R]:
+    @wraps(func)
+    def _(*args: P.args, **kwargs: P.kwargs) -> R:
+        # From Selection._wraps()
+        tokens = CALLER_TOKENS.get()
+        current_index = tokens.get(endpoint, -1)
+        _tok = CALLER_TOKENS.set({**tokens, endpoint: current_index + 1})
+        try:
+            return func(*args, **kwargs)
+        finally:
+            CALLER_TOKENS.reset(_tok)
+
+    return _
 
 
 @dataclass
@@ -80,7 +97,7 @@ class FnCollector(Generic[P, R]):
 
         return wrapper
 
-    def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
+    def search(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> Generator[Callable[P, R]]:
         # Check input signature
         args_dict = bind_args(self.base, *args, **kwargs)
         # Harvest
@@ -106,18 +123,14 @@ class FnCollector(Generic[P, R]):
         for results in itertools.product(*(_[-2:] for _ in harvest_temp)):
             if not results:
                 continue
-            # The first result is perfect
             for result in dict_intersection(*results):
-                # From Selection._wraps()
-                tokens = CALLER_TOKENS.get()
-                current_index = tokens.get(endpoint, -1)
-                _tok = CALLER_TOKENS.set({**tokens, endpoint: current_index + 1})
-                try:
-                    return result(*args, **kwargs)
-                finally:
-                    CALLER_TOKENS.reset(_tok)
+                yield _selection_wraps(result, endpoint)
         if self.base_as_default:
-            return self.base(*args, **kwargs)
+            yield self.base
+
+    def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
+        for result in self.search(__namespace, *args, **kwargs):
+            return result(*args, **kwargs)
         raise NotImplementedError('Cannot lookup any implementation with given arguments')
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
@@ -143,10 +156,16 @@ class FnCollectorInClass(Generic[T, P, R]):
     instance: T
 
     def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
-        return self.collector.call(__namespace, self.instance, *args, **kwargs)
+        for result in self.collector.search(__namespace, self.instance, *args, **kwargs):
+            if cls := get_method_class(result):
+                ancestor = get_common_ancestor(cls, type(self.instance))
+                if issubclass(ancestor, FnCollection) and ancestor is not FnCollection:
+                    return result(cls.from_self(self.instance), *args, **kwargs)  # noqa
+            return result(self.instance, *args, **kwargs)
+        raise NotImplementedError('Cannot lookup any implementation with given arguments')
 
     def __getattr__(self, item: str):
         return getattr(self.collector, item)
 
     def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
-        return self.collector(self.instance, *args, **kwargs)
+        return self.call(None, *args, **kwargs)

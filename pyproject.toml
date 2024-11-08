@@ -1,6 +1,6 @@
 [project]
 name = "flywheel-fncollector"
-version = "0.2.1"
+version = "0.3.0"
 description = "Add a FnCollector for Ryanvk Flywheel"
 authors = [
     { name = "F_Qilin", email = "fzq0003@gmail.com" },

@@ -1,3 +1,5 @@
+from typing_extensions import Selffrom typing_extensions import Self
+
 # Flywheel-FnCollector
 
 可能是个设想：通过设计一个`FnCollector`，简化现有[Ryanvk Flywheel](https://github.com/GreyElaina/RvFlywheel)中定义`Fn`的流程。
@@ -17,6 +19,7 @@ Flywheel-FnCollector
 └── src ······················· 项目源码
     └── flywheel_extras ······· 模块名
         ├── __init__.py ······· 模块入口
+        ├── collection.py ····· FnCollection 相关定义
         ├── collector.py ······ FnCollector 相关定义
         ├── deprecated.py ····· 已弃用类/函数定义
         ├── instance.py ······· InstanceOf 扩展
@@ -153,3 +156,21 @@ PredicateOverload: predicate(collect_value, call_value) == True
 项目添加了`OptionalInstanceOf`描述符，在找不到实例时使用默认值。
 
 具体示例见[`demo_collector.py`](demo_collector.py)。
+
+> [!WARNING]
+>
+> 据魔女所述，`InstanceOf`可能会在未来被弃用，因此不再推荐使用。
+>
+> 作为替代，下文实现了一种类似于`Staff`的跨类读取实例的方法。
+
+### FnCollection
+
+大概是一种`Staff`/`InstanceOf`的替代方案。
+
+你可以在一个类里定义重载函数，在另一个类里定义实现。这两个类要求继承自同一个数据类，且该数据类继承自`FnCollection`。
+
+数据类就是字面意思，不需要`dataclass`。
+
+具体示例见[`demo_cross_class.py`](demo_cross_class.py)。
+
+> `FnCollection`只是一个限制，免得调用时出现奇怪的问题。

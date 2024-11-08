@@ -19,3 +19,19 @@ def bind_args(func: Callable[P, R], *args: P.args, **kwargs: P.kwargs) -> dict[s
 
 def dict_intersection(*dicts: dict[Any, None]) -> dict[Any, None]:
     return {_k: _v for _d in dicts for _k, _v in _d.items()}
+
+
+def get_method_class(method: Callable) -> type | None:
+    if not (module := inspect.getmodule(method)):
+        return
+    for _, cls in inspect.getmembers(module, inspect.isclass):
+        if hasattr(cls, method.__name__):
+            return cls
+
+
+def get_common_ancestor(*classes: type) -> type:
+    common_mro = classes[0].mro()
+    for cls in classes[1:]:
+        cls_mro = cls.mro()
+        common_mro = [ancestor for ancestor in common_mro if ancestor in cls_mro]
+    return common_mro[0]
