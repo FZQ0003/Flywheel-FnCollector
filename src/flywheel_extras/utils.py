@@ -25,7 +25,13 @@ def get_method_class(method: Callable) -> type | None:
     if not (module := inspect.getmodule(method)):
         return
     for _, cls in inspect.getmembers(module, inspect.isclass):
-        if hasattr(cls, method.__name__):
+        cls_list = method.__qualname__.split('.')
+        if cls.__name__ != cls_list[0]:
+            continue
+        for attr in cls_list[1:-1]:
+            if not (cls := getattr(cls, attr, None)):
+                break
+        if getattr(cls, cls_list[-1], None) is method:
             return cls
 
 
