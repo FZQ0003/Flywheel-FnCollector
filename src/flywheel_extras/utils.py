@@ -31,7 +31,8 @@ def get_method_class(method: Callable) -> type | None:
         for attr in cls_list[1:-1]:
             if not (cls := getattr(cls, attr, None)):
                 break
-        if getattr(cls, cls_list[-1], None) is method:
+        # DO NOT USE GETATTR, ENTITY != METHOD
+        if hasattr(cls, cls_list[-1]):
             return cls
 
 
