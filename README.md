@@ -1,5 +1,3 @@
-from typing_extensions import Selffrom typing_extensions import Self
-
 # Flywheel-FnCollector
 
 可能是个设想：通过设计一个`FnCollector`，简化现有[Ryanvk Flywheel](https://github.com/GreyElaina/RvFlywheel)中定义`Fn`的流程。
