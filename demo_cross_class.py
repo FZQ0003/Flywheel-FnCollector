@@ -22,12 +22,12 @@ class DemoCapability(DemoPerform):
 
 class DemoImplementation(DemoPerform):
     @DemoCapability.func.collect(name='abc')
-    def impl_me(self, name: str) -> str:
-        return f'impl_a_me: {self}, {name}'
+    def impl_abc(self, name: str) -> str:
+        return f'impl_abc: {self}, {name}'
 
     @DemoCapability.func.collect(name='def')
-    def impl_him(self, name: str) -> str:
-        return f'impl_a_him: {self}, {name}'
+    def impl_def(self, name: str) -> str:
+        return f'impl_def: {self}, {name}'
 
 
 print(DemoCapability(114514, 'senpai').func('abc'))
