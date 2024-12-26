@@ -9,11 +9,11 @@ from typing import Generic, Any, overload
 
 from flywheel import CollectContext, FnCollectEndpoint, FnImplementEntity, FnOverload, SimpleOverload
 from flywheel.globals import CALLER_TOKENS, COLLECTING_CONTEXT_VAR
-from flywheel.typing import P, R, T
 from typing_extensions import Concatenate, Self
 
-from .collection import FnCollection
-from .utils import get_var_names, bind_args, dict_intersection, get_method_class, get_common_ancestor
+from .protocol import SupportsCrossCollection
+from .typing import P, P1, R, R1, T, T_sc
+from .utils import get_var_names, bind_args, dict_intersection, get_method_class
 
 
 def _selection_wraps(func: Callable[P, R], endpoint: FnCollectEndpoint) -> Callable[P, R]:
@@ -47,10 +47,10 @@ class FnCollector(Generic[P, R]):
 
     @classmethod
     def set(cls, *overloads: FnOverload, as_default: bool = False):
-        def wrapper(func: Callable[P, R]) -> 'FnCollector[P, R]':
+        def wrapper(func: Callable[P1, R1]) -> 'FnCollector[P1, R1]':
             # func = getattr(func, '__func__', func)
             return cls(
-                base=func,
+                base=func,  # type: ignore
                 overloads={
                     # Another SimpleOverload as fallback FnOverload (optional)
                     _.name: (_, SimpleOverload('fallback@' + _.name))
@@ -83,7 +83,16 @@ class FnCollector(Generic[P, R]):
         if not __context:
             __context = COLLECTING_CONTEXT_VAR.get()
 
-        def wrapper(func: Callable[P, R]):
+        @overload
+        def wrapper(func: Callable[P, R]) -> FnImplementEntity[Callable[P, R]]:
+            ...
+
+        @overload
+        def wrapper(func: Callable[Concatenate[T_sc, P1], R]) \
+                -> FnImplementEntity[Callable[P, R]]:
+            ...
+
+        def wrapper(func: Callable[P, R]) -> FnImplementEntity[Callable[P, R]]:
             # Check function signature
             if (
                     not isinstance(func, FnImplementEntity)
@@ -141,7 +150,8 @@ class FnCollector(Generic[P, R]):
         ...
 
     @overload
-    def __get__(self, instance: T, owner: type) -> 'FnCollectorInClass[T, P, R]':
+    def __get__(self: 'FnCollector[Concatenate[T, P1], R]',
+                instance: T, owner: type) -> 'FnCollectorInClass[T, P1, R]':
         ...
 
     def __get__(self, instance, owner):
@@ -157,11 +167,10 @@ class FnCollectorInClass(Generic[T, P, R]):
 
     def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
         for result in self.collector.search(__namespace, self.instance, *args, **kwargs):
-            if cls := get_method_class(result):
-                ancestor = get_common_ancestor(cls, type(self.instance))
-                if issubclass(ancestor, FnCollection) and ancestor is not FnCollection:
-                    return result(cls.from_self(self.instance), *args, **kwargs)  # noqa
-            return result(self.instance, *args, **kwargs)
+            return result(_cls.__cross__(self.instance)
+                          if (_cls := get_method_class(result)) and issubclass(_cls, SupportsCrossCollection)
+                          else self.instance,
+                          *args, **kwargs)
         raise NotImplementedError('Cannot lookup any implementation with given arguments')
 
     def __getattr__(self, item: str):

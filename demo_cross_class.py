@@ -2,17 +2,17 @@ from dataclasses import dataclass
 
 from flywheel import SimpleOverload
 
-from flywheel_extras import FnCollection, FnCollector
+from flywheel_extras import FnCollector
 
 
 @dataclass
-class DemoPerform(FnCollection):
+class DemoPerform:
     attr_a: int
     attr_b: str
 
     @classmethod
-    def from_self(cls, self):
-        return cls(self.attr_a, self.attr_b)
+    def __cross__(cls, other: 'DemoPerform') -> 'DemoPerform':
+        return cls(other.attr_a, other.attr_b)
 
 
 class DemoCapability(DemoPerform):

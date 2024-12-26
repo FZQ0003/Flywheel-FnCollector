@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from flywheel import SimpleOverload, TypeOverload, CollectContext, InstanceOf, InstanceContext
 
 from flywheel_extras import FnCollector, OptionalInstanceOf
@@ -13,7 +15,7 @@ class DemoCapability:
     def func_a(self, name: str) -> str: ...
 
     @FnCollector.set(SimpleOverload('name'), TypeOverload('event'))
-    def func_b(self, name: str, event: object | None = None) -> str: ...
+    def func_b(self, name: str, event: Any = None) -> str: ...
 
     # OK
     @classmethod
@@ -47,7 +49,9 @@ print(demo.func_a('me'))
 @DemoCapability.func_b.collect(name='me', event=int)
 @DemoCapability.func_b.collect(name='him', event=int)
 @DemoCapability.func_b.collect(name='me', event=str)
-def impl_b_1(self: DemoCapability, name: str, event: int | str) -> str:
+def impl_b_1(self: DemoCapability, name: str, event: int | str = 0) -> str:
+    # Note: type(event) must be in (int, str) and always has a value.
+    #       Default value here is just for type-checking.
     return f'impl_b_1: {self}, {name}, ({type(event).__name__}) {event}'
 
 
@@ -59,7 +63,7 @@ print(demo.func_b('him', '810'))  # pass, for impl_b is the same
 
 with CollectContext().scope() as cs:
     @DemoCapability.func_b.collect(name='me', event=int)
-    def impl_b_2(self: DemoCapability, name: str, event: int) -> str:
+    def impl_b_2(self: DemoCapability, name: str, event: int = 0) -> str:
         print(self.func_b(name, event))
         return f'impl_b_2: local'
 
@@ -72,8 +76,9 @@ def impl_c(cls: type[DemoCapability], name: str) -> str:
     return f'impl_c: {cls}, {name}'
 
 
-print(DemoCapability.func_c('yeah'))
-print(demo.func_c('yeah'))
+# Note: Type-checking is not supported for multi-decorated methods.
+print(DemoCapability.func_c('yeah'))  # type: ignore
+print(demo.func_c('yeah'))  # type: ignore
 
 
 @DemoCapability.func_a.collect(name='haha')
@@ -116,4 +121,5 @@ def impl_s_2(name: str) -> str:
 
 
 print(DemoCapability.func_s('him'))
-print(demo.func_s('him'))
+# Same as above
+print(demo.func_s('him'))  # type: ignore

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Generic, overload, TypeVar
+from typing import Any, Generic, overload
 
 from flywheel.globals import INSTANCE_CONTEXT_VAR
 from typing_extensions import Self
 
-T = TypeVar('T')
+from .typing import T
 
 
 class OptionalInstanceOf(Generic[T]):

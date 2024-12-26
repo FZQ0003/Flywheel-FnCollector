@@ -13,7 +13,7 @@ def impl_a(raw: dict[str, str]) -> str:
     return f'impl_a (foo.bar): {raw}'
 
 
-print(func_a({'type': 'foo.bar', 'value': 42}))
+print(func_a({'type': 'foo.bar', 'value': '42'}))
 print(func_a({'type': 'other', 'key': 'OwO'}))
 
 
