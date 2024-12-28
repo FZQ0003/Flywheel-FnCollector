@@ -12,13 +12,13 @@ from flywheel.globals import CALLER_TOKENS, COLLECTING_CONTEXT_VAR
 from typing_extensions import Concatenate, Self
 
 from .protocol import SupportsCrossCollection
-from .typing import P, P1, R, R1, T, T_sc
+from .typing import P, P1, R_co, R1_co, T, T_sc
 from .utils import get_var_names, bind_args, dict_intersection, get_method_class
 
 
-def _selection_wraps(func: Callable[P, R], endpoint: FnCollectEndpoint) -> Callable[P, R]:
+def _selection_wraps(func: Callable[P, R_co], endpoint: FnCollectEndpoint) -> Callable[P, R_co]:
     @wraps(func)
-    def _(*args: P.args, **kwargs: P.kwargs) -> R:
+    def _(*args: P.args, **kwargs: P.kwargs) -> R_co:
         # From Selection._wraps()
         tokens = CALLER_TOKENS.get()
         current_index = tokens.get(endpoint, -1)
@@ -32,11 +32,11 @@ def _selection_wraps(func: Callable[P, R], endpoint: FnCollectEndpoint) -> Calla
 
 
 @dataclass
-class FnCollector(Generic[P, R]):
-    base: Callable[P, R]
+class FnCollector(Generic[P, R_co]):
+    base: Callable[P, R_co]
     overloads: dict[str, tuple[FnOverload, SimpleOverload]] = field(default_factory=dict)
     base_as_default: bool = False
-    endpoints: dict[Any, FnCollectEndpoint[..., Callable[P, R]]] = field(init=False)
+    endpoints: dict[Any, FnCollectEndpoint[..., Callable[P, R_co]]] = field(init=False)
 
     def __post_init__(self):
         self.endpoints = {None: FnCollectEndpoint(self._endpoint_target)}
@@ -47,7 +47,7 @@ class FnCollector(Generic[P, R]):
 
     @classmethod
     def set(cls, *overloads: FnOverload, as_default: bool = False):
-        def wrapper(func: Callable[P1, R1]) -> 'FnCollector[P1, R1]':
+        def wrapper(func: Callable[P1, R1_co]) -> 'FnCollector[P1, R1_co]':
             # func = getattr(func, '__func__', func)
             return cls(
                 base=func,  # type: ignore
@@ -68,7 +68,7 @@ class FnCollector(Generic[P, R]):
             yield fn_overload[value is None].hold(value)
 
         # For type checking
-        def shape(*args: P.args, **kwargs: P.kwargs) -> R:
+        def shape(*args: P.args, **kwargs: P.kwargs) -> R_co:
             ...
 
         return shape
@@ -84,15 +84,15 @@ class FnCollector(Generic[P, R]):
             __context = COLLECTING_CONTEXT_VAR.get()
 
         @overload
-        def wrapper(func: Callable[P, R]) -> FnImplementEntity[Callable[P, R]]:
+        def wrapper(func: Callable[P, R_co]) -> FnImplementEntity[Callable[P, R_co]]:
             ...
 
         @overload
-        def wrapper(func: Callable[Concatenate[T_sc, P1], R]) \
-                -> FnImplementEntity[Callable[P, R]]:
+        def wrapper(func: Callable[Concatenate[T_sc, P1], R_co]) \
+                -> FnImplementEntity[Callable[P, R_co]]:
             ...
 
-        def wrapper(func: Callable[P, R]) -> FnImplementEntity[Callable[P, R]]:
+        def wrapper(func: Callable[P, R_co]) -> FnImplementEntity[Callable[P, R_co]]:
             # Check function signature
             if (
                     not isinstance(func, FnImplementEntity)
@@ -106,7 +106,7 @@ class FnCollector(Generic[P, R]):
 
         return wrapper
 
-    def search(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> Generator[Callable[P, R]]:
+    def search(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> Generator[Callable[P, R_co]]:
         # Check input signature
         args_dict = bind_args(self.base, *args, **kwargs)
         # Harvest
@@ -137,12 +137,12 @@ class FnCollector(Generic[P, R]):
         if self.base_as_default:
             yield self.base
 
-    def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
+    def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R_co:
         for result in self.search(__namespace, *args, **kwargs):
             return result(*args, **kwargs)
         raise NotImplementedError('Cannot lookup any implementation with given arguments')
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R_co:
         return self.call(None, *args, **kwargs)
 
     @overload
@@ -150,8 +150,8 @@ class FnCollector(Generic[P, R]):
         ...
 
     @overload
-    def __get__(self: 'FnCollector[Concatenate[T, P1], R]',
-                instance: T, owner: type) -> 'FnCollectorInClass[T, P1, R]':
+    def __get__(self: 'FnCollector[Concatenate[T, P1], R_co]',
+                instance: T, owner: type) -> 'FnCollectorInClass[T, P1, R_co]':
         ...
 
     def __get__(self, instance, owner):
@@ -161,11 +161,11 @@ class FnCollector(Generic[P, R]):
 
 
 @dataclass
-class FnCollectorInClass(Generic[T, P, R]):
-    collector: FnCollector[Concatenate[T, P], R]
+class FnCollectorInClass(Generic[T, P, R_co]):
+    collector: FnCollector[Concatenate[T, P], R_co]
     instance: T
 
-    def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R:
+    def call(self, __namespace, *args: P.args, **kwargs: P.kwargs) -> R_co:
         for result in self.collector.search(__namespace, self.instance, *args, **kwargs):
             return result(_cls.__cross__(self.instance)
                           if (_cls := get_method_class(result)) and issubclass(_cls, SupportsCrossCollection)
@@ -176,5 +176,5 @@ class FnCollectorInClass(Generic[T, P, R]):
     def __getattr__(self, item: str):
         return getattr(self.collector, item)
 
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R:
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R_co:
         return self.call(None, *args, **kwargs)

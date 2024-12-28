@@ -5,7 +5,8 @@ if TYPE_CHECKING:
 
 P = ParamSpec('P')
 P1 = ParamSpec('P1')
-R = TypeVar('R', covariant=True)
-R1 = TypeVar('R1', covariant=True)
+R = TypeVar('R')
+R_co = TypeVar('R_co', covariant=True)
+R1_co = TypeVar('R1_co', covariant=True)
 T = TypeVar('T')
 T_sc = TypeVar('T_sc', bound='SupportsCrossCollection')
