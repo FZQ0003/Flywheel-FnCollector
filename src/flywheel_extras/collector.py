@@ -146,22 +146,22 @@ class FnCollector(Generic[P, R_co]):
         return self.call(None, *args, **kwargs)
 
     @overload
-    def __get__(self, instance: 'FnCollectorInClass | None', owner: type) -> Self:
+    def __get__(self, instance: 'BoundFnCollector | None', owner: type) -> Self:
         ...
 
     @overload
     def __get__(self: 'FnCollector[Concatenate[T, P1], R_co]',
-                instance: T, owner: type) -> 'FnCollectorInClass[T, P1, R_co]':
+                instance: T, owner: type) -> 'BoundFnCollector[T, P1, R_co]':
         ...
 
     def __get__(self, instance, owner):
-        if instance is None or isinstance(instance, FnCollectorInClass):
+        if instance is None or isinstance(instance, BoundFnCollector):
             return self
-        return FnCollectorInClass(self, instance)  # type: ignore
+        return BoundFnCollector(self, instance)  # type: ignore
 
 
 @dataclass
-class FnCollectorInClass(Generic[T, P, R_co]):
+class BoundFnCollector(Generic[T, P, R_co]):
     collector: FnCollector[Concatenate[T, P], R_co]
     instance: T
 
